@@ -1,3 +1,7 @@
+using Azure.Core;
+using Azure.Identity;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,6 +17,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+var credential = new AzureCliCredential();
+AccessToken? accessToken = null;
+try
+{
+    accessToken = credential.GetToken(new TokenRequestContext(new[] { "api://e3b0ed2b-9168-41d1-8a5c-44c31477ae89/.default"}));
+} 
+catch (Exception ex)
+{
+    Console.WriteLine(ex.Message);
+}
+
+
+var token = accessToken.HasValue ? accessToken.Value.Token : string.Empty;
+Console.WriteLine(string.Join(".", token.Split('.').Take(2)));
 
 app.UseHttpsRedirection();
 
