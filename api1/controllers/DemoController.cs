@@ -16,6 +16,7 @@ public class DemoController : ControllerBase
     [HttpGet]
     public async Task DemoCall()
     {
-        await Task.CompletedTask;
+        var result = await _api2Client.GetAsync("Demo");
+        var content = await result.Content.ReadAsStringAsync();
     }
 }

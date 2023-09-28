@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+
 using Azure.Core;
 using Azure.Identity;
 
@@ -9,17 +11,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
-
-builder.Services.AddHttpClient("api2");
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
 
 var credential = new AzureCliCredential();
 AccessToken? accessToken = null;
@@ -35,6 +26,21 @@ catch (Exception ex)
 
 var token = accessToken.HasValue ? accessToken.Value.Token : string.Empty;
 Console.WriteLine(string.Join(".", token.Split('.').Take(2)));
+
+builder.Services.AddHttpClient("api2", options =>
+{
+    options.BaseAddress = new Uri("https://localhost:7027/api/");
+    options.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+});
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseHttpsRedirection();
 
