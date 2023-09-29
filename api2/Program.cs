@@ -1,5 +1,12 @@
+using System.Text;
+
+using api2api.api2;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +16,51 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
+var key = "This is a sample secret key - please don't use in production environment.'";
+var issuer = "http://localhost/";
+var audience = "Erwin Demo Person";
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"));
+    .AddJwtBearer(options => 
+    {
+        options.TokenValidationParameters = new()
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            ValidateLifetime = true,
+        };
+    })
+    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"), "Azure");
+
+builder.Services.AddAuthorization(options =>
+{
+    var jwtPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme)
+        .Build();
+
+    var azurePolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .AddAuthenticationSchemes("Azure")
+        .AddRequirements(new AppRoleRequirement("e3b0ed2b-9168-41d1-8a5c-44c31477ae89"))
+        .Build();
+
+    // options.DefaultPolicy = jwtPolicy;
+    options.FallbackPolicy = jwtPolicy;
+
+    options.AddPolicy("Combined", pb =>
+        pb.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "Azure")
+            .RequireAuthenticatedUser()
+            .AddRequirements(new AppRoleOrJwtRequirement("e3b0ed2b-9168-41d1-8a5c-44c31477ae89"))
+            .Build());
+
+    options.AddPolicy("Azure", azurePolicy);
+});
 
 var app = builder.Build();
 

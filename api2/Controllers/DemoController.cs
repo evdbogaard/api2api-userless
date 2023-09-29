@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ap2api.api2;
 
-[Authorize]
 [Route("api/[controller]")]
 [ApiController]
 public class DemoController
@@ -14,4 +13,12 @@ public class DemoController
         await Task.CompletedTask;
         return "success";
     }
+
+    [Authorize("Combined")]
+    [HttpGet("Combined")]
+    public string Combined() => "Combined endpoint";
+
+    [Authorize("Azure")]
+    [HttpGet("AzureAdOnly")]
+    public string AzureOnly() => "Azure endpoint only";
 }
