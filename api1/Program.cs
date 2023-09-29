@@ -37,8 +37,6 @@ var key = "This is a sample secret key - please don't use in production environm
 var issuer = "http://localhost/";
 var audience = "Erwin Demo Person";
 var tokenHandler = new JwtSecurityTokenHandler();
-// var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("secret".PadRight((512/8), '\0')));
-// key.KeyId = "MyKeyId";
 var tokenDescriptor = new SecurityTokenDescriptor
 {
     Expires = DateTime.UtcNow.AddMinutes(10),
