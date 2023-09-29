@@ -1,7 +1,12 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text;
 
 using Azure.Core;
 using Azure.Identity;
+
+using Microsoft.IdentityModel.Tokens;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,9 +30,42 @@ catch (Exception ex)
 
 
 var token = accessToken.HasValue ? accessToken.Value.Token : string.Empty;
-Console.WriteLine(string.Join(".", token.Split('.').Take(2)));
+Console.WriteLine(string.Join(".", token.Split('.').Take(3)));
 
-builder.Services.AddHttpClient("api2", options =>
+// Second token
+var key = "This is a sample secret key - please don't use in production environment.'";
+var issuer = "http://localhost/";
+var audience = "Erwin Demo Person";
+var tokenHandler = new JwtSecurityTokenHandler();
+// var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes("secret".PadRight((512/8), '\0')));
+// key.KeyId = "MyKeyId";
+var tokenDescriptor = new SecurityTokenDescriptor
+{
+    Expires = DateTime.UtcNow.AddMinutes(10),
+    Subject = new ClaimsIdentity(new[] 
+    {
+        new Claim("id", "1"),
+        new Claim(JwtRegisteredClaimNames.Email, "test@example.com"),
+        new Claim(JwtRegisteredClaimNames.Sub, "test@example.com"),
+        new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+    }),
+    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.ASCII.GetBytes(key)), SecurityAlgorithms.HmacSha512Signature),
+    Issuer = issuer,
+    Audience = audience
+};
+
+var jwtToken = tokenHandler.CreateToken(tokenDescriptor);
+var final = tokenHandler.WriteToken(jwtToken);
+Console.WriteLine(final);
+
+
+builder.Services.AddHttpClient("jwt", options =>
+{
+    options.BaseAddress = new Uri("https://localhost:7027/api/");
+    options.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", final);
+});
+
+builder.Services.AddHttpClient("azure", options =>
 {
     options.BaseAddress = new Uri("https://localhost:7027/api/");
     options.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
