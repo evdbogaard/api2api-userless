@@ -3,6 +3,8 @@ using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 
+using Api2Api.Api1.Handlers;
+
 using Azure.Core;
 using Azure.Identity;
 
@@ -17,20 +19,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-var credential = new AzureCliCredential();
-AccessToken? accessToken = null;
-try
-{
-    accessToken = credential.GetToken(new TokenRequestContext(new[] { "api://e3b0ed2b-9168-41d1-8a5c-44c31477ae89/.default"}));
-} 
-catch (Exception ex)
-{
-    Console.WriteLine(ex.Message);
-}
-
-
-var token = accessToken.HasValue ? accessToken.Value.Token : string.Empty;
-Console.WriteLine(string.Join(".", token.Split('.').Take(3)));
+TokenCredential credential = new AzureCliCredential();
 
 // Second token
 var key = "This is a sample secret key - please don't use in production environment.'";
@@ -56,7 +45,8 @@ var jwtToken = tokenHandler.CreateToken(tokenDescriptor);
 var final = tokenHandler.WriteToken(jwtToken);
 Console.WriteLine(final);
 
-
+builder.Services.AddTransient<AzureAuthHandler>();
+builder.Services.AddSingleton(credential);
 builder.Services.AddHttpClient("jwt", options =>
 {
     options.BaseAddress = new Uri("https://localhost:7027/api/");
@@ -66,8 +56,7 @@ builder.Services.AddHttpClient("jwt", options =>
 builder.Services.AddHttpClient("azure", options =>
 {
     options.BaseAddress = new Uri("https://localhost:7027/api/");
-    options.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-});
+}).WithAzureAuthentication();
 
 var app = builder.Build();
 
