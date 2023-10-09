@@ -1,3 +1,6 @@
+Install-Module Microsoft.Graph -Force
+Import-Module Microsoft.Graph
+
 $tenantId = $env:tenantId
 $apiPrincipalId = $env:principalId
 
