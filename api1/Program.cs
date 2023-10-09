@@ -45,7 +45,7 @@ var jwtToken = tokenHandler.CreateToken(tokenDescriptor);
 var final = tokenHandler.WriteToken(jwtToken);
 Console.WriteLine(final);
 
-builder.Services.AddTransient<AzureAuthHandler>();
+builder.Services.AddTransient(s => new AzureAuthHandler(credential, ["api://e3b0ed2b-9168-41d1-8a5c-44c31477ae89/.default"]));
 builder.Services.AddSingleton(credential);
 builder.Services.AddHttpClient("jwt", options =>
 {
@@ -56,7 +56,7 @@ builder.Services.AddHttpClient("jwt", options =>
 builder.Services.AddHttpClient("azure", options =>
 {
     options.BaseAddress = new Uri("https://localhost:7027/api/");
-}).WithAzureAuthentication();
+}).AddHttpMessageHandler<AzureAuthHandler>();
 
 var app = builder.Build();
 
