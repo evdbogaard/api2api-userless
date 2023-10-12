@@ -1,9 +1,6 @@
 param location string
+param appRegistrationId string = '22df344e-6808-40ef-b60d-720ff244207f'
 param updateTag string = utcNow('u')
-
-param graphClientId string
-@secure()
-param graphClientSecret string
 
 var prefix = 'evdb-demo-api2api'
 
@@ -40,7 +37,7 @@ resource appRoleAssignment 'Microsoft.Resources/deploymentScripts@2020-10-01' = 
     azPowerShellVersion: '8.3'
     retentionInterval: 'P1D'
     forceUpdateTag: updateTag
-    cleanupPreference: 'OnSuccess'
+    cleanupPreference: 'Always'
     scriptContent: loadTextContent('appRoleAssignment.ps1')
     environmentVariables: [
       {
@@ -52,45 +49,37 @@ resource appRoleAssignment 'Microsoft.Resources/deploymentScripts@2020-10-01' = 
         value: managedIdentity.properties.principalId
       }
       {
-        name: 'graphClientId'
-        value: graphClientId
-      }
-      {
-        name: 'graphClientSecret'
-        secureValue: graphClientSecret
-      }
-      {
-        name: 'test'
-        value: 'test'
+        name: 'appRegistrationId'
+        value: appRegistrationId
       }
     ]
   }
 }
 
-// resource clientApi 'Microsoft.Web/sites@2022-09-01' = {
-//   name: '${prefix}-client-api'
-//   location: location
-//   properties: {
-//     serverFarmId: asp.id
-//     httpsOnly: true
-//     siteConfig: {
-//       ftpsState: 'Disabled'
-//       http20Enabled: true
-//       minTlsVersion: '1.2'
-//       appSettings: [
-//         {
-//           name: 'ManagedIdentity'
-//           value: managedIdentity.properties.clientId
-//         }
-//       ]
-//     }
-//   }
-//   identity: {
-//     type: 'UserAssigned'
-//     userAssignedIdentities: {
-//       '${managedIdentity.id}': {}
-//     }
-//   }
-// }
+resource clientApi 'Microsoft.Web/sites@2022-09-01' = {
+  name: '${prefix}-client-api'
+  location: location
+  properties: {
+    serverFarmId: asp.id
+    httpsOnly: true
+    siteConfig: {
+      ftpsState: 'Disabled'
+      http20Enabled: true
+      minTlsVersion: '1.2'
+      appSettings: [
+        {
+          name: 'ManagedIdentity'
+          value: managedIdentity.properties.clientId
+        }
+      ]
+    }
+  }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
+}
 
 // Api2
