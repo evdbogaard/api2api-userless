@@ -8,15 +8,10 @@ $graphToken = $(Get-AzAccessToken -Tenant $tenantId -ResourceUrl "https://graph.
 $graphUrl = "https://graph.microsoft.com/v1.0/servicePrincipals"
 $headers = @{Authorization = "Bearer $graphToken"}
 
-Write-Host "Url: ${graphUrl}"
-Write-Host "Header: ${headers}"
-
 # App registration / getting custom role ids
 $appRegistration = Invoke-RestMethod -Method "Get" -Uri "${graphUrl}/${appRegistrationId}" -Headers $headers
 $appRoles = $appRegistration.appRoles
 $appRoleId = ($appRoles | Where-Object {$_.Value -eq $roleToSet }).Id
-
-Write-Host "AppRoleId: ${appRoleId}"
 
 # App role assignment
 $appAssignments = Invoke-RestMethod -Method 'Get' -Uri "${graphUrl}/${apiPrincipalId}/appRoleAssignments" -Headers $headers
