@@ -1,55 +1,123 @@
+function GetOrCreate-AppRegistration {
+    param(
+        [string]$name,
+        [string]$url,
+        [Object]$headers
+    )
+
+    $apps = $(Invoke-RestMethod -Method "Get" -Uri $url -Headers $headers).value
+    $app = $apps | Where-Object {$_.displayName -eq $name}
+
+    if (!$app) {
+        $body = @{
+            displayName = $name
+        } | ConvertTo-Json
+
+        $app = Invoke-RestMethod -Method "Post" -ContentType "application/json" -Uri $graphUrl -Headers $headers -Body $body
+    }
+
+    return $app
+}
+
+function Update-AppRoles {
+    param(
+        [Object]$appRoles,
+        [string]$roles,
+        [bool]$isDevelopment
+    )
+
+    $memberTypes = @("Application")
+    if ($isDevelopment) {
+        $memberTypes += "User"
+    }
+
+    $roles.split(",") | ForEach-Object { 
+        $role = $_
+        $exists = $appRoles | Where-Object {$_.value -eq $role}
+
+        if (!$exists) {
+            $appRoles += @{
+                value = $role
+                id = (new-guid).Guid
+                displayName = $role
+                description = $role
+                allowedMemberTypes =$memberTypes
+            }
+        }
+    }
+    return $appRoles
+}
+
+function Update-Scopes {
+    param(
+        [Object]$scopes,
+        [string]$roles
+    )
+
+    $combinedScopes = @()
+    $roles.split(",") | ForEach-Object { 
+        $role = $_ -replace "-"
+        $exists = $scopes | Where-Object {$_.value -eq $role}
+
+        if (!$exists) {
+            $scopes += @{
+                id = (new-guid).Guid
+                adminConsentDisplayName = $role
+                adminConsentDescription = $role
+                userConsentDisplayName = $role
+                userConsentDescription = $role
+                value = $role
+                type = "User"
+            }
+        }
+    }
+
+    return $scopes
+}
+
 $tenantId = $env:tenantId
-$servers = $env:servers
+$roles = $env:roles
+$isDevelopment = $env:isDevelopment -eq "true"
 
 # Graph setup
 $graphToken = $(Get-AzAccessToken -Tenant $tenantId -ResourceUrl "https://graph.microsoft.com").Token
 $graphUrl = "https://graph.microsoft.com/v1.0/applications"
 $headers = @{Authorization = "Bearer $graphToken"}
 
-# Create
-# $body = @{
-#         displayName = "api2api-newtest"
-#     } | ConvertTo-Json
+$app = GetOrCreate-AppRegistration -name "api2api-registration" -url $graphUrl -headers $headers
 
-# Invoke-RestMethod -Method "Post" -ContentType "application/json" -Uri "${graphUrl}" -Headers $headers -Body $body
-
-$name = "test-api" -replace "-"
+$appRoles = Update-AppRoles -appRoles $app.appRoles -roles $roles -isDevelopment $isDevelopment
+$scopes = Update-Scopes -scopes $app.api.oauth2PermissionScopes -roles $roles
 
 $body = @{
-    appRoles = @(
-        @{
-            value = "test-api"
-            id = "67a13158-ae23-416c-8382-f46f2c6c863d" # (new-guid).Guid
-            displayName = "test-api"
-            description = "test-api"
-            allowedMemberTypes = @("User", "Application")
-        }
-    )
+    appRoles = $appRoles
     api = @{
-        oauth2PermissionScopes = @(
-            @{
-                id= (new-guid).Guid
-                adminConsentDisplayName= $name
-                adminConsentDescription= $name
-                userConsentDisplayName= $name
-                userConsentDescription= $name
-                value= $name
-                type= "User"
-                isEnabled= $true
-            }
-            # @{
-            #     # adminConsentDescription = "test-api"
-            #     # adminConsentDisplayName = "test-api"
-            #     id = (new-guid).Guid
-            #     type = "User"
-            #     # userConsentDescription = "test-api"
-            #     # userConsentDisplayName = "test-api"
-            #     value = "test-api"
-            # }
-        )
+        oauth2PermissionScopes = $scopes
+        preAuthorizedApplications = $app.api.preAuthorizedApplications
     }
 } | ConvertTo-Json -Depth 10
 
-Write-Host $body
+$appId = $app.id
+Invoke-RestMethod -Method "Patch" -ContentType "application/json" -Uri "${graphUrl}/${appid}" -Headers $headers -Body $body
 
-Invoke-RestMethod -Method "Patch" -ContentType "application/json" -Uri "${graphUrl}/b61d3b68-f01a-4e1e-a085-c59557c21450" -Headers $headers -Body $body
+# Add preAuthorizedApplication (AZ CLI)
+if ($isDevelopment) {
+    $scopeIds = $scopes | Select-Object -ExpandProperty id
+    $preAuthorizedApplications = @()
+    $preAuthorizedApplications += @{
+        appId = "04b07795-8ddb-461a-bbee-02f9e1bf7b46"
+        delegatedPermissionIds = @(
+            $scopeIds
+        )
+    }
+    
+    $body = @{
+        appRoles = $appRoles
+        api = @{
+            oauth2PermissionScopes = $scopes
+            preAuthorizedApplications = $preAuthorizedApplications
+        }
+    } | ConvertTo-Json -Depth 10
+
+    Invoke-RestMethod -Method "Patch" -ContentType "application/json" -Uri "${graphUrl}/${appid}" -Headers $headers -Body $body
+}
