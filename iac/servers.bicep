@@ -1,8 +1,6 @@
 param location string
-param apis array = [
-  'server-api'
-  'basket-api'
-]
+param appRegistrationId string
+param apis array
 
 var prefix = 'evdb-demo-api2api'
 
@@ -20,6 +18,12 @@ resource serverApi 'Microsoft.Web/sites@2022-09-01' = [for api in apis: {
       ftpsState: 'Disabled'
       http20Enabled: true
       minTlsVersion: '1.2'
+      appSettings: [
+        {
+          name: 'appRegistrationId'
+          value: appRegistrationId
+        }
+      ]
     }
   }
 }]

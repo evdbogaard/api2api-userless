@@ -121,3 +121,6 @@ if ($isDevelopment) {
 
     Invoke-RestMethod -Method "Patch" -ContentType "application/json" -Uri "${graphUrl}/${appid}" -Headers $headers -Body $body
 }
+
+$DeploymentScriptOutputs = @{}
+$DeploymentScriptOutputs['applicationId'] = $appId

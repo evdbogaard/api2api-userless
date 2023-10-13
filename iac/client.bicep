@@ -1,5 +1,5 @@
 param location string
-param appRegistrationId string = '22df344e-6808-40ef-b60d-720ff244207f'
+param appRegistrationId string
 param updateTag string = utcNow('u')
 
 var prefix = 'evdb-demo-api2api'
@@ -73,6 +73,10 @@ resource clientApi 'Microsoft.Web/sites@2022-09-01' = {
         {
           name: 'ManagedIdentity'
           value: managedIdentity.properties.clientId
+        }
+        {
+          name: 'appRegistrationId'
+          value: appRegistrationId
         }
       ]
     }
