@@ -1,5 +1,6 @@
 param location string
 param appRegistrationId string
+param appRegistrationObjectId string
 param updateTag string = utcNow('u')
 
 var prefix = 'evdb-demo-api2api'
@@ -49,7 +50,7 @@ resource appRoleAssignment 'Microsoft.Resources/deploymentScripts@2020-10-01' = 
       }
       {
         name: 'appRegistrationId'
-        value: appRegistrationId
+        value: appRegistrationObjectId
       }
       {
         name: 'roles'

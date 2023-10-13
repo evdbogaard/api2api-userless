@@ -14,9 +14,19 @@ function GetOrCreate-AppRegistration {
         } | ConvertTo-Json
 
         $app = Invoke-RestMethod -Method "Post" -ContentType "application/json" -Uri $graphUrl -Headers $headers -Body $body
+
+        $body = @{
+            appId = $app.appId
+            tags = @("WindowsAzureActiveDirectoryIntegratedApp", "HideApp")
+        } | ConvertTo-Json
+
+        $servicePrincipal = Invoke-RestMethod -Method "Post" -ContentType "application/json" -Uri "https://graph.microsoft.com/v1.0/servicePrincipals" -Headers $headers -Body $body
+    } else {
+        $urlServicePrincipal = "https://graph.microsoft.com/v1.0/servicePrincipals?`$filter=displayName eq '${name}'"
+        $servicePrincipal = (Invoke-RestMethod -Method "Get" -Uri $urlServicePrincipal -Headers $headers).value[0]
     }
 
-    return $app
+    return @($app, $servicePrincipal)
 }
 
 function Update-AppRoles {
@@ -54,7 +64,6 @@ function Update-Scopes {
         [string]$roles
     )
 
-    $combinedScopes = @()
     $roles.split(",") | ForEach-Object { 
         $role = $_ -replace "-"
         $exists = $scopes | Where-Object {$_.value -eq $role}
@@ -72,6 +81,7 @@ function Update-Scopes {
         }
     }
 
+    # There is a bug here where a single scope returns an object instead of array
     return $scopes
 }
 
@@ -84,12 +94,17 @@ $graphToken = $(Get-AzAccessToken -Tenant $tenantId -ResourceUrl "https://graph.
 $graphUrl = "https://graph.microsoft.com/v1.0/applications"
 $headers = @{Authorization = "Bearer $graphToken"}
 
-$app = GetOrCreate-AppRegistration -name "api2api-registration" -url $graphUrl -headers $headers
+$appBuilder = GetOrCreate-AppRegistration -name "api2api-registration" -url $graphUrl -headers $headers
+$app = $appBuilder[0]
+$servicePrincipal = $appBuilder[1]
 
 $appRoles = Update-AppRoles -appRoles $app.appRoles -roles $roles -isDevelopment $isDevelopment
 $scopes = Update-Scopes -scopes $app.api.oauth2PermissionScopes -roles $roles
 
+$applicationId = $app.appId
 $body = @{
+    signInAudience = "AzureADMyOrg"
+    identifierUris = @("api://${applicationId}")
     appRoles = $appRoles
     api = @{
         oauth2PermissionScopes = $scopes
@@ -112,6 +127,8 @@ if ($isDevelopment) {
     }
     
     $body = @{
+        signInAudience = "AzureADMyOrg"
+        identifierUris = @("api://${applicationId}")
         appRoles = $appRoles
         api = @{
             oauth2PermissionScopes = $scopes
@@ -123,4 +140,5 @@ if ($isDevelopment) {
 }
 
 $DeploymentScriptOutputs = @{}
-$DeploymentScriptOutputs['applicationId'] = $appId
+$DeploymentScriptOutputs['applicationId'] = $applicationId
+$DeploymentScriptOutputs['servicePrincipalObjectId'] = $servicePrincipal.id

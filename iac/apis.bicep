@@ -56,6 +56,7 @@ module client 'client.bicep' = {
   params: {
     location: location
     appRegistrationId: appRegistration.properties.outputs.applicationId
+    appRegistrationObjectId: appRegistration.properties.outputs.servicePrincipalObjectId
   }
 }
 
