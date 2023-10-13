@@ -1,4 +1,5 @@
 param location string
+param azureAdDomain string
 param apis array = [
   'server-api'
   'basket-api'
@@ -66,5 +67,6 @@ module servers 'servers.bicep' = {
     location: location
     apis: apis
     appRegistrationId: appRegistration.properties.outputs.applicationId
+    azureAdDomain: azureAdDomain
   }
 }

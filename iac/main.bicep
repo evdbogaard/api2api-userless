@@ -1,5 +1,6 @@
 targetScope = 'subscription'
 
+param azureAdDomain string
 param location string = 'westeurope'
 
 resource rg 'Microsoft.Resources/resourceGroups@2020-06-01' = {
@@ -12,5 +13,6 @@ module apis './apis.bicep' = {
   scope: rg
   params: {
     location: location
+    azureAdDomain: azureAdDomain
   }
 }
