@@ -8,11 +8,14 @@ public class AppRoleRequirement : AuthorizationHandler<AppRoleRequirement>, IAut
 {
     public readonly string Id;
 
-    public AppRoleRequirement(string id)
+    public AppRoleRequirement(string id, string role)
     {
         ArgumentNullException.ThrowIfNullOrWhiteSpace(id);
         Id = id;
+        Role = role;
     }
+
+    public string Role { get; }
 
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, AppRoleRequirement requirement)
     {
@@ -22,7 +25,7 @@ public class AppRoleRequirement : AuthorizationHandler<AppRoleRequirement>, IAut
         var roles = context.User.Claims.Where(c => c.Type == "roles").ToList();
         var aud = context.User.Claims.Where(c => c.Type == JwtRegisteredClaimNames.Aud).FirstOrDefault();
         var roleClaim = context.User.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").FirstOrDefault();
-        if (aud?.Value == $"api://{requirement.Id}" && roleClaim != null && roleClaim.Value == "app_role_access_mi")
+        if (aud?.Value == $"api://{requirement.Id}" && roleClaim != null && roleClaim.Value == requirement.Role)
             context.Succeed(requirement);
         else
             context.Fail();

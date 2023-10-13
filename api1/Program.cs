@@ -9,6 +9,7 @@ using Azure.Core;
 using Azure.Identity;
 
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Writers;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,7 +46,8 @@ var jwtToken = tokenHandler.CreateToken(tokenDescriptor);
 var final = tokenHandler.WriteToken(jwtToken);
 Console.WriteLine(final);
 
-builder.Services.AddTransient(s => new AzureAuthHandler(credential, ["api://e3b0ed2b-9168-41d1-8a5c-44c31477ae89/.default"]));
+var appId = builder.Configuration["appRegistrationId"];
+builder.Services.AddTransient(s => new AzureAuthHandler(credential, [$"api://{appId}/.default"]));
 builder.Services.AddSingleton(credential);
 builder.Services.AddHttpClient("jwt", options =>
 {

@@ -20,6 +20,8 @@ var key = "This is a sample secret key - please don't use in production environm
 var issuer = "http://localhost/";
 var audience = "Erwin Demo Person";
 
+var azureAdSection = builder.Configuration.GetSection("AzureAd");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options => 
     {
@@ -35,7 +37,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
         };
     })
-    .AddMicrosoftIdentityWebApi(builder.Configuration.GetSection("AzureAd"), "Azure");
+    .AddMicrosoftIdentityWebApi(azureAdSection, "Azure", true);
 
 builder.Services.AddAuthorization(options =>
 {
@@ -47,7 +49,7 @@ builder.Services.AddAuthorization(options =>
     var azurePolicy = new AuthorizationPolicyBuilder()
         .RequireAuthenticatedUser()
         .AddAuthenticationSchemes("Azure")
-        .AddRequirements(new AppRoleRequirement("e3b0ed2b-9168-41d1-8a5c-44c31477ae89"))
+        .AddRequirements(new AppRoleRequirement(azureAdSection.GetValue<string>("ClientId"), builder.Configuration["role"]))
         .Build();
 
     // options.DefaultPolicy = jwtPolicy;
@@ -56,7 +58,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("Combined", pb =>
         pb.AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme, "Azure")
             .RequireAuthenticatedUser()
-            .AddRequirements(new AppRoleOrJwtRequirement("e3b0ed2b-9168-41d1-8a5c-44c31477ae89"))
+            .AddRequirements(new AppRoleOrJwtRequirement(azureAdSection.GetValue<string>("ClientId"), builder.Configuration["role"]))
             .Build());
 
     options.AddPolicy("Azure", azurePolicy);

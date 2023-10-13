@@ -19,6 +19,7 @@ public class AzureAuthHandler : DelegatingHandler
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var result = await _tokenCredential.GetTokenAsync(_requestContext, cancellationToken);
+        Console.WriteLine(result.Token);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", result.Token);
 
         return await base.SendAsync(request, cancellationToken);
