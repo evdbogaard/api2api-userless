@@ -25,7 +25,7 @@ public class AppRoleRequirement : AuthorizationHandler<AppRoleRequirement>, IAut
         var roles = context.User.Claims.Where(c => c.Type == "roles").ToList();
         var aud = context.User.Claims.Where(c => c.Type == JwtRegisteredClaimNames.Aud).FirstOrDefault();
         var roleClaim = context.User.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").FirstOrDefault();
-        if (aud?.Value == $"api://{requirement.Id}" && roleClaim != null && roleClaim.Value == requirement.Role)
+        if (aud?.Value == requirement.Id && roleClaim != null && roleClaim.Value == requirement.Role)
             context.Succeed(requirement);
         else
             context.Fail();
