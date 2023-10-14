@@ -9,8 +9,6 @@ using Azure.Core;
 using Azure.Identity;
 
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Writers;
-
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,7 +18,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddControllers();
 
-TokenCredential credential = new AzureCliCredential();
+TokenCredential credential = builder.Environment.IsDevelopment()
+    ? new AzureCliCredential()
+    : new ManagedIdentityCredential(builder.Configuration.GetValue<string>("ManagedIdentity"));
+
+#region JWT TOKEN
 
 // Second token
 var key = "This is a sample secret key - please don't use in production environment.'";
@@ -44,20 +46,32 @@ var tokenDescriptor = new SecurityTokenDescriptor
 
 var jwtToken = tokenHandler.CreateToken(tokenDescriptor);
 var final = tokenHandler.WriteToken(jwtToken);
-Console.WriteLine(final);
 
-var appId = builder.Configuration["appRegistrationId"];
-builder.Services.AddTransient(s => new AzureAuthHandler(credential, [$"api://{appId}/.default"]));
-builder.Services.AddSingleton(credential);
 builder.Services.AddHttpClient("jwt", options =>
 {
-    options.BaseAddress = new Uri("https://localhost:7027/api/");
+    var url = builder.Configuration.GetValue("ServerUrl", string.Empty);
+    options.BaseAddress = new Uri($"{url}api/");
     options.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", final);
 });
 
-builder.Services.AddHttpClient("azure", options =>
+#endregion
+
+var appRegistrationId = builder.Configuration.GetValue<string>("appRegistrationId");
+ArgumentNullException.ThrowIfNullOrWhiteSpace(appRegistrationId, nameof(appRegistrationId));
+
+builder.Services.AddTransient(s => new AzureAuthHandler(credential, [$"api://{appRegistrationId}/.default"]));
+builder.Services.AddSingleton(credential);
+
+builder.Services.AddHttpClient("azureServer", options =>
 {
-    options.BaseAddress = new Uri("https://localhost:7027/api/");
+    var url = builder.Configuration.GetValue("ServerUrl", string.Empty);
+    options.BaseAddress = new Uri($"{url}api/");
+}).AddHttpMessageHandler<AzureAuthHandler>();
+
+builder.Services.AddHttpClient("azureBasket", options =>
+{
+    var url = builder.Configuration.GetValue("Basket", string.Empty);
+    options.BaseAddress = new Uri($"{url}api/");
 }).AddHttpMessageHandler<AzureAuthHandler>();
 
 var app = builder.Build();

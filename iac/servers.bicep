@@ -40,3 +40,6 @@ resource serverApi 'Microsoft.Web/sites@2022-09-01' = [for api in apis: {
     }
   }
 }]
+
+
+// Something to make sure it knows it's dotnet

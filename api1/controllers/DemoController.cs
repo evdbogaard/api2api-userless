@@ -9,12 +9,14 @@ namespace Api2Api.Api1.Controllers;
 public class DemoController : ControllerBase
 {
     private readonly HttpClient _api2Jwt;
-    private readonly HttpClient _api2Azure;
+    private readonly HttpClient _api2AzureServer;
+    private readonly HttpClient _api2AzureBasket;
 
     public DemoController(IHttpClientFactory httpClientFactory)
     {
         _api2Jwt = httpClientFactory.CreateClient("jwt");
-        _api2Azure = httpClientFactory.CreateClient("azure");
+        _api2AzureServer = httpClientFactory.CreateClient("azureServer");
+        _api2AzureBasket = httpClientFactory.CreateClient("azureBasket");
     }
 
     [HttpGet("JwtDefault")]
@@ -29,7 +31,7 @@ public class DemoController : ControllerBase
     [HttpGet("AzureDefault")]
     public async Task<string> AzureDefault()
     {
-        var result = await _api2Azure.GetAsync("Demo");
+        var result = await _api2AzureServer.GetAsync("Demo");
         if (!result.IsSuccessStatusCode)
             throw new AuthenticationException();
         return await result.Content.ReadAsStringAsync();
@@ -47,7 +49,7 @@ public class DemoController : ControllerBase
     [HttpGet("AzureCombined")]
     public async Task<string> AzureCombined()
     {
-        var result = await _api2Azure.GetAsync("Demo/Combined");
+        var result = await _api2AzureServer.GetAsync("Demo/Combined");
         if (!result.IsSuccessStatusCode)
             throw new AuthenticationException();
         return await result.Content.ReadAsStringAsync();
@@ -65,7 +67,16 @@ public class DemoController : ControllerBase
     [HttpGet("AzureAzureOnly")]
     public async Task<string> AzureAzureOnly()
     {
-        var result = await _api2Azure.GetAsync("Demo/AzureAdOnly");
+        var result = await _api2AzureServer.GetAsync("Demo/AzureAdOnly");
+        if (!result.IsSuccessStatusCode)
+            throw new AuthenticationException();
+        return await result.Content.ReadAsStringAsync();
+    }
+
+    [HttpGet("AzureAzureOnlyBasket")]
+    public async Task<string> AzureAzureOnlyBasket()
+    {
+        var result = await _api2AzureBasket.GetAsync("Demo/AzureAdOnly");
         if (!result.IsSuccessStatusCode)
             throw new AuthenticationException();
         return await result.Content.ReadAsStringAsync();
