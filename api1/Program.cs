@@ -68,9 +68,9 @@ builder.Services.AddHttpClient("azureServer", options =>
     options.BaseAddress = new Uri($"{url}api/");
 }).AddHttpMessageHandler<AzureAuthHandler>();
 
-builder.Services.AddHttpClient("azureBasket", options =>
+builder.Services.AddHttpClient("azureOrder", options =>
 {
-    var url = builder.Configuration.GetValue("Basket", string.Empty);
+    var url = builder.Configuration.GetValue("OrderUrl", string.Empty);
     options.BaseAddress = new Uri($"{url}api/");
 }).AddHttpMessageHandler<AzureAuthHandler>();
 

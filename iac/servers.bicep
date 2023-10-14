@@ -19,6 +19,7 @@ resource serverApi 'Microsoft.Web/sites@2022-09-01' = [for api in apis: {
       ftpsState: 'Disabled'
       http20Enabled: true
       minTlsVersion: '1.2'
+      netFrameworkVersion: 'v8.0'
       appSettings: [
         {
           name: 'AzureAd:Instance'
@@ -36,10 +37,11 @@ resource serverApi 'Microsoft.Web/sites@2022-09-01' = [for api in apis: {
           name: 'AzureAd:ClientId'
           value: appRegistrationId
         }
+        {
+          name: 'Role'
+          value: api
+        }
       ]
     }
   }
 }]
-
-
-// Something to make sure it knows it's dotnet

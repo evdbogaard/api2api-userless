@@ -7,7 +7,7 @@ var prefix = 'evdb-demo-api2api'
 
 param roles array = [
   'server-api'
-  'basket-api'
+  'order-api'
 ]
 
 resource asp 'Microsoft.Web/serverfarms@2022-09-01' existing = {
@@ -67,6 +67,7 @@ resource clientApi 'Microsoft.Web/sites@2022-09-01' = {
     serverFarmId: asp.id
     httpsOnly: true
     siteConfig: {
+      netFrameworkVersion: 'v8.0'
       ftpsState: 'Disabled'
       http20Enabled: true
       minTlsVersion: '1.2'
@@ -76,7 +77,7 @@ resource clientApi 'Microsoft.Web/sites@2022-09-01' = {
           value: managedIdentity.properties.clientId
         }
         {
-          name: 'appRegistrationId'
+          name: 'AppRegistrationId'
           value: appRegistrationId
         }
       ]

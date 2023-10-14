@@ -2,7 +2,7 @@ param location string
 param azureAdDomain string
 param apis array = [
   'server-api'
-  'basket-api'
+  'order-api'
 ]
 param updateTag string = utcNow('u')
 var isDevelopment = true

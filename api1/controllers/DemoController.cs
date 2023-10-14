@@ -10,13 +10,13 @@ public class DemoController : ControllerBase
 {
     private readonly HttpClient _api2Jwt;
     private readonly HttpClient _api2AzureServer;
-    private readonly HttpClient _api2AzureBasket;
+    private readonly HttpClient _api2AzureOrder;
 
     public DemoController(IHttpClientFactory httpClientFactory)
     {
         _api2Jwt = httpClientFactory.CreateClient("jwt");
         _api2AzureServer = httpClientFactory.CreateClient("azureServer");
-        _api2AzureBasket = httpClientFactory.CreateClient("azureBasket");
+        _api2AzureOrder = httpClientFactory.CreateClient("azureOrder");
     }
 
     [HttpGet("JwtDefault")]
@@ -73,10 +73,10 @@ public class DemoController : ControllerBase
         return await result.Content.ReadAsStringAsync();
     }
 
-    [HttpGet("AzureAzureOnlyBasket")]
-    public async Task<string> AzureAzureOnlyBasket()
+    [HttpGet("AzureAzureOnlyOrder")]
+    public async Task<string> AzureAzureOnlyOrder()
     {
-        var result = await _api2AzureBasket.GetAsync("Demo/AzureAdOnly");
+        var result = await _api2AzureOrder.GetAsync("Demo/AzureAdOnly");
         if (!result.IsSuccessStatusCode)
             throw new AuthenticationException();
         return await result.Content.ReadAsStringAsync();
