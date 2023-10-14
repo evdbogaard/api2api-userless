@@ -56,7 +56,7 @@ builder.Services.AddHttpClient("jwt", options =>
 
 #endregion
 
-var appRegistrationId = builder.Configuration.GetValue<string>("appRegistrationId");
+var appRegistrationId = builder.Configuration.GetValue<string>("AppRegistrationId");
 ArgumentNullException.ThrowIfNullOrWhiteSpace(appRegistrationId, nameof(appRegistrationId));
 
 builder.Services.AddTransient(s => new AzureAuthHandler(credential, [$"api://{appRegistrationId}/.default"]));
@@ -77,11 +77,8 @@ builder.Services.AddHttpClient("azureOrder", options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 
