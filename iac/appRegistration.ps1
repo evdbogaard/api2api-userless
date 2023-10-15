@@ -64,24 +64,22 @@ function Update-Scopes {
         [string]$roles
     )
 
-    $roles.split(",") | ForEach-Object { 
-        $role = $_ -replace "-"
-        $exists = $scopes | Where-Object {$_.value -eq $role}
+    $scopeName = "access_api"
+    $exists = $scopes | Where-Object {$_.value -eq $scopeName}
 
-        if (!$exists) {
-            $scopes += @{
+    if (!$exists) {
+        $scopes +=
+            @{
                 id = (new-guid).Guid
-                adminConsentDisplayName = $role
-                adminConsentDescription = $role
-                userConsentDisplayName = $role
-                userConsentDescription = $role
-                value = $role
+                adminConsentDisplayName = $scopeName
+                adminConsentDescription = $scopeName
+                userConsentDisplayName = $scopeName
+                userConsentDescription = $scopeName
+                value = $scopeName
                 type = "User"
             }
-        }
     }
 
-    # There is a bug here where a single scope returns an object instead of array
     return $scopes
 }
 
@@ -99,10 +97,10 @@ $app = $appBuilder[0]
 $servicePrincipal = $appBuilder[1]
 
 $appRoles = Update-AppRoles -appRoles $app.appRoles -roles $roles -isDevelopment $isDevelopment
-$scopes = Update-Scopes -scopes $app.api.oauth2PermissionScopes -roles $roles
+$scopes = @(Update-Scopes -scopes $app.api.oauth2PermissionScopes -roles $roles)
 
 $applicationId = $app.appId
-$body = @{
+$body = ConvertTo-Json -Depth 10 @{
     signInAudience = "AzureADMyOrg"
     identifierUris = @("api://${applicationId}")
     appRoles = $appRoles
@@ -110,7 +108,7 @@ $body = @{
         oauth2PermissionScopes = $scopes
         preAuthorizedApplications = $app.api.preAuthorizedApplications
     }
-} | ConvertTo-Json -Depth 10
+}
 
 $appId = $app.id
 Invoke-RestMethod -Method "Patch" -ContentType "application/json" -Uri "${graphUrl}/${appid}" -Headers $headers -Body $body
@@ -126,7 +124,7 @@ if ($isDevelopment) {
         )
     }
     
-    $body = @{
+    $body = ConvertTo-Json -Depth 10 @{
         signInAudience = "AzureADMyOrg"
         identifierUris = @("api://${applicationId}")
         appRoles = $appRoles
@@ -134,7 +132,7 @@ if ($isDevelopment) {
             oauth2PermissionScopes = $scopes
             preAuthorizedApplications = $preAuthorizedApplications
         }
-    } | ConvertTo-Json -Depth 10
+    }
 
     Invoke-RestMethod -Method "Patch" -ContentType "application/json" -Uri "${graphUrl}/${appid}" -Headers $headers -Body $body
 }
