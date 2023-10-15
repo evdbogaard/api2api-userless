@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 using Microsoft.AspNetCore.Authorization;
 
@@ -24,8 +25,8 @@ public class AppRoleRequirement : AuthorizationHandler<AppRoleRequirement>, IAut
 
         var roles = context.User.Claims.Where(c => c.Type == "roles").ToList();
         var aud = context.User.Claims.Where(c => c.Type == JwtRegisteredClaimNames.Aud).FirstOrDefault();
-        var roleClaim = context.User.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").FirstOrDefault();
-        if (aud?.Value == requirement.Id && roleClaim != null && roleClaim.Value == requirement.Role)
+        var roleClaims = context.User.Claims.Where(c => c.Type == ClaimTypes.Role).ToList();
+        if (aud?.Value == requirement.Id && roleClaims.Select(rc => rc.Value).Contains(requirement.Role))
             context.Succeed(requirement);
         else
             context.Fail();

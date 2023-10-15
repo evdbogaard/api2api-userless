@@ -1,4 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security;
+using System.Security.Claims;
 
 using Microsoft.AspNetCore.Authorization;
 
@@ -21,18 +23,21 @@ public class AppRoleOrJwtRequirement : AuthorizationHandler<AppRoleOrJwtRequirem
         if (context.HasFailed)
             return Task.CompletedTask;
 
-        var aud = context.User.Claims.Where(c => c.Type == JwtRegisteredClaimNames.Aud).First();
-        if (aud.Value == $"api://{requirement.Id}")
+        var aud = context.User.Claims.Where(c => c.Type == JwtRegisteredClaimNames.Aud).FirstOrDefault();
+        if (aud == null)
+            throw new SecurityException("No valid claim");
+
+        if (aud.Value == requirement.Id)
         {
-            var roleClaim = context.User.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").FirstOrDefault();
-            if (roleClaim != null && roleClaim.Value == requirement.Role)
+            var roleClaims = context.User.Claims.Where(c => c.Type == ClaimTypes.Role).ToList();
+            if (roleClaims.Select(rc => rc.Value).Contains(requirement.Role))
                 context.Succeed(requirement);
             else
                 context.Fail();
         }
         else
         {
-            // Some other checks?
+            // Checks for JWT
             context.Succeed(requirement);
         }
 
